@@ -138,3 +138,46 @@ plt.show()
 plt.tight_layout()
 fig.savefig(f"{folder}/accs.png")
 plt.close()
+
+#Testing the model
+with gzip.open('C:/Users/My PC/Documents/Techfield/emnist-gzip/gzip/emnist-byclass-test-images-idx3-ubyte.gz', 'r') as f:
+    test_data=f.read(697940*784)
+
+test_data= np.frombuffer(test_data, dtype=np.uint8).astype(np.float32)
+
+with gzip.open('C:/Users/My PC/Documents/Techfield/emnist-gzip/gzip/emnist-byclass-test-labels-idx1-ubyte.gz', 'r') as f:
+    test_labels=f.read()
+
+test_labels= np.frombuffer(test_labels, dtype=np.uint8).astype(np.float32)
+
+test_data=test_data[16:].reshape(116323,28,28)
+test_labels=test_labels[8:]
+
+result=model.predict(test_data)
+result1=[result[i].argmax() for i in range(116323)]
+Accuracy=np.mean([result1[i]==test_labels[i] for i in range(116323)])
+
+
+def one_hot_encode(y):
+    N = len(y)
+    K = 62
+
+    Y = np.zeros((N,K))
+
+    for i in range(N):
+        Y[i,int(y[i])] = 1
+
+    return Y
+
+#confusion matrix
+conf=one_hot_encode(result1).T.dot(one_hot_encode(test_labels))
+conf=pd.DataFrame(conf)
+cc=np.zeros(62)
+cl=np.zeros(62)
+for i in range(62):
+    cc[i]=(conf.loc[i,:].sum()-conf.loc[i,i])/conf.loc[i,:].sum()
+    cl[i]=conf.iloc[i,:62].sum()
+conf['%error']=cc*100
+conf['total']=cl
+
+conf.to_csv('C:/Users/My PC/Documents/GitHub/EMNIST analysis/confusion.csv')
